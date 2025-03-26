@@ -1,0 +1,76 @@
+Query 1: Contextual Analysis of Crime Hotspots
+
+PREFIX smw: <http://www.semanticweb.org/kruthi/ontologies/2024/11/untitled-ontology-13#>
+
+SELECT ?location ?latitude ?longitude
+WHERE {
+  ?location smw:hasLatitudeDimension ?latitude ;
+            smw:hasLongitudeDimension ?longitude .
+}
+LIMIT 10
+
+____________________________________________________________________________________________________________________
+
+Query 2: Temporal Analysis of Crime Trends
+
+PREFIX smw: <http://www.semanticweb.org/kruthi/ontologies/2024/11/untitled-ontology-13#>
+
+SELECT DISTINCT ?crm_cd_desc ?crime_year (COUNT(?dr_no) AS ?crimeCount)
+WHERE {
+    # Link crime records to crime codes
+    ?dr_no smw:linkedToCrimeCode ?crm_cd .
+    ?crm_cd smw:hasDescription ?crm_cd_desc .
+    
+    FILTER (?crm_cd_desc = smw:THEFT)  # For theft type of crime, we are checking how the crime count has evolved over the years (from 2010-20242)
+    
+    # Link crime records to the year the crime occurred (using crime_year)
+    ?dr_no smw:occuredOn ?crime_year .  # Link crime to year
+    
+}
+GROUP BY ?crm_cd_desc ?crime_year
+ORDER BY DESC(?crimeCount)
+LIMIT 50
+
+____________________________________________________________________________________________________________________
+
+
+Query 3: Evaluating the Impact of Police Presence on Crime Reduction
+
+PREFIX smw: <http://www.semanticweb.org/kruthi/ontologies/2024/11/untitled-ontology-13#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT DISTINCT ?year ?crm_cd (COUNT(?dr_no) AS ?crimeCount) (COUNT(?arrest) AS ?arrestCount)
+WHERE {
+    ?crm_cd smw:impactedBy ?arrest .
+    ?dr_no smw:linkedToCrimeCode ?crm_cd .
+    ?dr_no smw:occursAt ?location .
+    ?dr_no smw:occuredOn ?year .
+    ?arrest smw:hasArrestStatus "True" .
+    
+}
+GROUP BY ?year ?crm_cd
+ORDER BY ?year DESC(?crimeCount)
+
+____________________________________________________________________________________________________________________
+
+
+Query 4: Cross-City Benchmarking of Crime Trends
+
+
+PREFIX smw: <http://www.semanticweb.org/kruthi/ontologies/2024/11/untitled-ontology-13#>
+
+SELECT DISTINCT ?city ?crm_cd (COUNT(?dr_no) AS ?crimeCount)
+WHERE {
+    # Link crime records to crime codes
+    ?dr_no smw:linkedToCrimeCode ?crm_cd .
+    
+    # Link crime codes to cities
+    ?city smw:comparedFor ?crm_cd .
+    FILTER (?crm_cd IN (smw:210, smw:230 , smw:930, smw:330))
+    
+    # Filter for Los Angeles city
+    #FILTER (?city = smw:Los%20Angeles)  # Make sure the URI for Los Angeles is correct
+    
+}
+GROUP BY ?city ?crm_cd
+ORDER BY DESC(?crimeCount)
+LIMIT 50
